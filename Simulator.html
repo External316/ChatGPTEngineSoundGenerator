@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engine Sound Simulator</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  input[type="range"] {
+    margin: 10px;
+    padding: 5px;
+    font-size: 16px;
+    width: 80%;
+  }
+</style>
+</head>
+<body>
+  <h1>Engine Sound Simulator</h1>
+  <label for="engineLoad">Engine Load:</label>
+  <input type="range" id="engineLoad" min="0" max="100" value="50">
+  <br>
+  <label for="engineRPM">Engine RPM:</label>
+  <input type="range" id="engineRPM" min="0" max="100" value="50">
+  <br>
+  <button id="startButton">Start Engine</button>
+  <button id="stopButton">Stop Engine</button>
+
+  <script>
+    let engineInterval;
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const engineLoadSlider = document.getElementById('engineLoad');
+    const engineRPMSlider = document.getElementById('engineRPM');
+
+    startButton.addEventListener('click', startEngine);
+    stopButton.addEventListener('click', stopEngine);
+
+    function startEngine() {
+      const engineLoad = engineLoadSlider.value / 100;
+      const engineRPM = engineRPMSlider.value / 100;
+
+      engineInterval = setInterval(() => {
+        const random = Math.random();
+        const volume = random * engineLoad;
+        const playbackRate = 1 + (random * engineRPM * 0.1);
+
+        const context = new AudioContext();
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(200 + (playbackRate * 1000), context.currentTime); // Adjust frequency based on RPM
+        gainNode.gain.setValueAtTime(volume, context.currentTime); // Adjust volume based on engine load
+
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.1); // Adjust duration of sound
+        context.close();
+      }, 1000);
+    }
+
+    function stopEngine() {
+      clearInterval(engineInterval);
+    }
+  </script>
+</body>
+</html>
