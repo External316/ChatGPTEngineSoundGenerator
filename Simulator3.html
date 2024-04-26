@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engine Sound Simulator</title>
+</head>
+<body>
+  <div id="controls">
+    <label for="engineLoad">Engine Load:</label>
+    <input type="range" id="engineLoad" min="0" max="100" value="50">
+    <label for="rpm">RPM:</label>
+    <input type="range" id="rpm" min="0" max="100" value="50">
+  </div>
+  <button id="startButton">Start Engine</button>
+  <button id="stopButton">Stop Engine</button>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let oscillator = null;
+    let targetFrequency = 0;
+    let currentFrequency = 0;
+    let frequencyStep = 0;
+
+    function generateSound() {
+      if (oscillator) {
+        oscillator.stop();
+      }
+
+      const baseFrequency = 50;
+      currentFrequency = baseFrequency + (100 - parseInt(document.getElementById('rpm').value)) * 2;
+      const volume = parseInt(document.getElementById('engineLoad').value) / 100;
+
+      oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(currentFrequency, audioCtx.currentTime);
+
+      gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+
+      oscillator.start();
+
+      frequencyStep = (targetFrequency - currentFrequency) / 100;
+      const intervalId = setInterval(() => {
+        currentFrequency += frequencyStep;
+        oscillator.frequency.setValueAtTime(currentFrequency, audioCtx.currentTime);
+        if (Math.abs(currentFrequency - targetFrequency) < Math.abs(frequencyStep)) {
+          clearInterval(intervalId);
+        }
+      }, 10);
+    }
+
+    function stopSound() {
+      if (oscillator) {
+        oscillator.stop();
+        oscillator = null;
+      }
+    }
+
+    document.getElementById('startButton').addEventListener('click', generateSound);
+    document.getElementById('stopButton').addEventListener('click', stopSound);
+
+    function updateSound() {
+      targetFrequency = 50 + (100 - parseInt(document.getElementById('rpm').value)) * 2;
+      const volume = parseInt(document.getElementById('engineLoad').value) / 100;
+
+      if (oscillator) {
+        frequencyStep = (targetFrequency - currentFrequency) / 100;
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+      }
+    }
+
+    document.getElementById('engineLoad').addEventListener('change', updateSound);
+    document.getElementById('rpm').addEventListener('change', updateSound);
+  </script>
+</body>
+</html>
